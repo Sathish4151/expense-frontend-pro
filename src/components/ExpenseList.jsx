@@ -1,4 +1,3 @@
-// src/components/ExpenseList.jsx
 import React from 'react';
 import axios from 'axios';
 
@@ -12,7 +11,7 @@ const ExpenseList = ({ expenses, setExpenses, setEditingExpense }) => {
 
   return (
     <div className="w-full bg-white border border-black rounded-xl shadow-lg">
-      {/* Header – sits flush to top border */}
+      {/* Header */}
       <div className="px-6 py-4 border-b border-gray-300">
         <h3 className="text-2xl font-bold">Your Expenses</h3>
       </div>

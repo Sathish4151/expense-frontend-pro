@@ -61,7 +61,6 @@ const ExpenseForm = ({
     >
       <h3 className="text-2xl font-bold mb-4">Add Expense</h3>
 
-      {/* inputs */}
       <input
         name="title"
         value={form.title}

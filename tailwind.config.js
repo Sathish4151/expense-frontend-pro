@@ -4,7 +4,6 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        // define your Poppins font here
         serif: ['"Noto Serif"', 'serif'],
       },
       colors: {
