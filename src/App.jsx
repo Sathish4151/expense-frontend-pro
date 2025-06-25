@@ -9,6 +9,8 @@ function App() {
   const [expenses, setExpenses] = useState([]);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [currentPage, setCurrentPage] = useState('dashboard');
+  const [editingExpense, setEditingExpense] = useState(null);
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   useEffect(() => {
     if (token) {
@@ -22,6 +24,11 @@ function App() {
     }
   }, [token]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
   if (!token) return <AuthForm setToken={setToken} />;
 
   const handleLogout = () => {
@@ -31,12 +38,24 @@ function App() {
 
   const handleNavigate = (page) => {
     setCurrentPage(page);
+    if (page !== 'add-expense') {
+      setEditingExpense(null);
+    }
+  };
+
+  const handleEditExpense = (expense) => {
+    setEditingExpense(expense);
+    setCurrentPage('add-expense');
+  };
+
+  const handleToggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <Dashboard expenses={expenses} token={token} />;
+        return <Dashboard expenses={expenses} token={token} setExpenses={setExpenses} onEditExpense={handleEditExpense} />;
       case 'add-expense':
         return (
           <AddExpensePage 
@@ -44,24 +63,27 @@ function App() {
             expenses={expenses} 
             setExpenses={setExpenses}
             onNavigate={handleNavigate}
+            editingExpense={editingExpense}
+            setEditingExpense={setEditingExpense}
           />
         );
       default:
-        return <Dashboard expenses={expenses} token={token} />;
+        return <Dashboard expenses={expenses} token={token} setExpenses={setExpenses} onEditExpense={handleEditExpense} />;
     }
   };
 
   return (
-    <>
+    <div className={theme === 'dark' ? 'dark' : ''}>
       <Navbar
         token={token}
         onLogout={handleLogout}
         expenses={expenses}
         activePage={currentPage}
         onNavigate={handleNavigate}
+        onToggleTheme={handleToggleTheme}
       />
       {renderCurrentPage()}
-    </>
+    </div>
   );
 }
 

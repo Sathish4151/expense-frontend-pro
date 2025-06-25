@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
 
-const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
+const AddExpensePage = ({ token, expenses, setExpenses, onNavigate, editingExpense, setEditingExpense }) => {
   const [form, setForm] = useState({
     title: '',
     amount: '',
@@ -13,6 +13,29 @@ const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState('');
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (editingExpense) {
+      setForm({
+        title: editingExpense.title,
+        amount: editingExpense.amount,
+        category: editingExpense.category,
+        type: editingExpense.type,
+        date: new Date(editingExpense.date).toISOString().slice(0, 10),
+        description: editingExpense.description || ''
+      });
+    } else {
+      setForm({
+        title: '',
+        amount: '',
+        category: '',
+        type: 'Need',
+        date: new Date().toISOString().slice(0, 10),
+        description: ''
+      });
+    }
+  }, [editingExpense]);
 
   const categories = [
     'Food & Dining',
@@ -38,12 +61,24 @@ const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
     setMessage('');
 
     try {
-      const response = await axios.post('/api/expenses', form, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      setExpenses([...expenses, response.data]);
-      setMessage('Expense added successfully!');
+      if (editingExpense) {
+        // Update existing expense
+        const response = await axios.put(`/api/expenses/${editingExpense._id}`, form, {
+          headers: { 'x-auth-token': token }
+        });
+        
+        setExpenses(expenses.map(exp => exp._id === editingExpense._id ? response.data : exp));
+        setMessage('Expense updated successfully!');
+        setEditingExpense(null);
+      } else {
+        // Add new expense
+        const response = await axios.post('/api/expenses', form, {
+          headers: { 'x-auth-token': token }
+        });
+        
+        setExpenses([...expenses, response.data]);
+        setMessage('Expense added successfully!');
+      }
       
       // Reset form
       setForm({
@@ -62,11 +97,16 @@ const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
       }, 3000);
 
     } catch (error) {
-      setMessage('Error adding expense. Please try again.');
-      console.error('Error adding expense:', error);
+      setMessage(editingExpense ? 'Error updating expense. Please try again.' : 'Error adding expense. Please try again.');
+      console.error('Error with expense:', error);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleCancel = () => {
+    setEditingExpense(null);
+    if (onNavigate) onNavigate('dashboard');
   };
 
   return (
@@ -78,8 +118,12 @@ const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-8"
         >
-          <h1 className="text-3xl font-bold text-gray-900">Add New Expense</h1>
-          <p className="text-gray-600 mt-2">Track your spending to better manage your finances</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {editingExpense ? 'Edit Expense' : 'Add New Expense'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {editingExpense ? 'Update your expense details' : 'Track your spending to better manage your finances'}
+          </p>
         </motion.div>
 
         {/* Form */}
@@ -266,7 +310,7 @@ const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
             <div className="flex space-x-4 pt-4">
               <button
                 type="button"
-                onClick={() => onNavigate && onNavigate('dashboard')}
+                onClick={handleCancel}
                 className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Cancel
@@ -276,7 +320,10 @@ const AddExpensePage = ({ token, expenses, setExpenses, onNavigate }) => {
                 disabled={isSubmitting}
                 className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {isSubmitting ? 'Adding...' : 'Add Expense'}
+                {isSubmitting 
+                  ? (editingExpense ? 'Updating...' : 'Adding...') 
+                  : (editingExpense ? 'Update Expense' : 'Add Expense')
+                }
               </button>
             </div>
           </form>
